@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pandas as pd
 from pytesseract import pytesseract
 from imutils.perspective import four_point_transform
 from datetime import datetime
@@ -9,7 +10,7 @@ pytesseract.tesseract_cmd = path_to_tesseract
 
 startTime = datetime.now()
 
-image = cv2.imread('img/6.jpg')
+image = cv2.imread('img/test.jpg')
 scale_percentage = 40
 width = int(image.shape[1] * scale_percentage/100)
 height = int(image.shape[0] * scale_percentage/100)
@@ -72,41 +73,49 @@ th = cv2.threshold(norm_img, 0, 255, cv2.THRESH_OTSU)[1]
 
 #Cropping
 crop_image = th[120:175, 300:870]
-output1 = cv2.resize(crop_image, dsize, interpolation=cv2.INTER_NEAREST)
 cv2.imshow("cropped", crop_image)
 
 crop_image2 = th[200:250, 300:870]
-output2 = cv2.resize(crop_image2, dsize, interpolation=cv2.INTER_NEAREST)
 cv2.imshow("cropped1", crop_image2)
 
 crop_image3 = th[290:350, 300:870]
-output1 = cv2.resize(crop_image, dsize, interpolation=cv2.INTER_NEAREST)
 cv2.imshow("cropped2", crop_image3)
 
-crop_image4 = th[375:420, 330:365]
-output1 = cv2.resize(crop_image, dsize, interpolation=cv2.INTER_NEAREST)
+crop_image4 = th[370:420, 320:370]
 cv2.imshow("cropped3", crop_image4)
 
 crop_image5 = th[375:420, 440:670]
-output1 = cv2.resize(crop_image, dsize, interpolation=cv2.INTER_NEAREST)
 cv2.imshow("cropped4", crop_image5)
 
 crop_image1 = th[552:610, 12:370]
-output2 = cv2.resize(crop_image1, dsize, interpolation=cv2.INTER_NEAREST)
 cv2.imshow("cropped_", crop_image1)
 cv2.waitKey(0)
 
 print("Execution Time: {}".format(datetime.now() - startTime))
-
-text = pytesseract.image_to_string(crop_image1)  
+data = []
+text = pytesseract.image_to_string(crop_image1)
+data.append(text)
 print('NIC: '+text[:-1])
 text = pytesseract.image_to_string(crop_image)  
+data.append(text)
 print('Surname: '+text[:-1])
 text = pytesseract.image_to_string(crop_image2)  
+data.append(text)
 print('First Name: '+text[:-1])
 text = pytesseract.image_to_string(crop_image3)  
+data.append(text)
 print('Surname at Birth: '+text[:-1])
-text = pytesseract.image_to_string(crop_image4)  
-print('Gender: '+text[:-1])
 text = pytesseract.image_to_string(crop_image5)  
+data.append(text)
 print('Date of Birth: '+text[:-1])
+
+text = pytesseract.image_to_string(crop_image4, config=("-c tessedit"
+                  "_char_whitelist=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                  " --psm 10"
+                  " -l osd"
+                  " "))  
+data.append(text)
+print('Gender: '+text[:-1])
+
+df1 = pd.DataFrame([data], columns=['NIC','Surname', 'Firstname', 'Surname at birth', 'Date of birth', 'Gender'])
+df1.to_excel("Book1.xlsx") 
