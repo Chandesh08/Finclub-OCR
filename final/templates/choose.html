@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Hello, world!</title>
+    <style>
+        .nav-link {
+            font-size: 18px;
+            color: black;
+            font-weight: 3000;
+        }
+
+        .login {
+            color: orangered;
+        }
+
+        .register {
+            color: orangered;
+        }
+
+        .img {
+            width: 50%;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .loader {
+            border: 16px solid orangered;
+            border-radius: 50%;
+            border-top: 16px solid blue;
+            width: 120px;
+            height: 120px;
+            -webkit-animation: spin 2s linear infinite;
+            /* Safari */
+            animation: spin 2s linear infinite;
+            position: absolute;
+            z-index: 1000;
+            top: 40%;
+        }
+
+        .pro {
+            top: 60%;
+            position: absolute;
+            font-weight: bold;
+            color: white;
+            animation: example 4s linear infinite;
+        }
+
+        .load {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            background-color: rgba(0, 0, 0, 0.7);
+            visibility: hidden;
+        }
+
+        /* Safari */
+        @-webkit-keyframes spin {
+            0% {
+                -webkit-transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes example {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="d-flex justify-content-center load" id="load">
+        <div class="loader"></div>
+        <br />
+        <h3 class="pro">Processing Image</h3>
+    </div>
+
+    <nav class="navbar navbar-expand-md navbar-light">
+        <a class="navbar-brand" href="#">
+            <img src="../static/finclub.jpg" alt="logo">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Borrow</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Lend</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Live loan</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>How it works</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link login" href="#" style="color: orangered;"><b>Login</b></a>
+                </li>
+
+                <!-- Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle register" style="color: orangered;" href="#" id="navbardrop"
+                        data-toggle="dropdown">
+                        <b>Register</b>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#"><b>Borrower</b></a>
+                        <a class="dropdown-item" href="#"><b>Lender</b></a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+    <div class="container-fluid">
+        <input id="pro" class="center" type="file" accept="image/*" capture="user" style="display: none;" />
+        <input id="files" class="center" type="file" accept="image/*" capture="environment" style="display: none;" />
+        <input id="bfiles" class="center" type="file" accept="image/*" capture="environment" style="display: none;" />
+        <h2 class="center">OCR Testing</h2>
+        <br />
+        <div class="row">
+            <div class="col-sm-3">
+                <h5 class="center">Profile Picture</h5>
+                <a onclick="check1()" class="d-flex justify-content-center"><img src="../static/propic.png" alt="logo"
+                        class="img"></a>
+            </div>
+            <div class="col-sm-1"></div>
+            <div class="col-sm-3">
+                <h5 class="center">Front ID Card</h5>
+                <a onclick="check()" class="d-flex justify-content-center"><img src="../static/front.png" alt="logo"
+                        class="img"></a>
+            </div>
+            <div class="col-sm-1"></div>
+            <div class="col-sm-3">
+                <h5 class="center">Back ID Card</h5>
+                <span class="d-flex justify-content-center">
+                    <a onclick="check2()" class="d-flex justify-content-center"><img src="../static/back.png" alt="logo"
+                            class="img"></a>
+                </span>
+            </div>
+            <div class="col-sm-1"></div>
+        </div>
+    </div>
+    <br />
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+    <script>
+        function resize(item) {
+            //define the width to resize e.g 600px
+            var resize_width = 1920; //without px
+
+            //create a FileReader
+            var reader = new FileReader();
+
+            //image turned to base64-encoded Data URI.
+            reader.readAsDataURL(item);
+            reader.name = item.name; //get the image's name
+            reader.size = item.size; //get the image's size
+            reader.onload = function (event) {
+                var img = new Image(); //create a image
+                img.src = event.target.result; //result is base64-encoded Data URI
+                img.name = event.target.name; //set name (optional)
+                img.size = event.target.size; //set size (optional)
+                img.onload = function (el) {
+                    var elem = document.createElement('canvas'); //create a canvas
+
+                    //scale the image to 600 (width) and keep aspect ratio
+                    var scaleFactor = resize_width / el.target.width;
+                    elem.width = resize_width;
+                    elem.height = el.target.height * scaleFactor;
+
+                    //draw in canvas
+                    var ctx = elem.getContext('2d');
+                    ctx.drawImage(el.target, 0, 0, elem.width, elem.height);
+
+                    //get the base64-encoded Data URI from the resize image
+                    var srcEncoded = ctx.canvas.toDataURL('image/jpg', 1);
+                    takepicture1(srcEncoded);
+                    //assign it to thumb src
+                    /*Now you can send "srcEncoded" to the server and
+                    convert it to a png o jpg. Also can send
+                    "el.target.name" that is the file's name.*/
+
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function check() {
+
+            $("input[id='files']").click();
+        }
+
+        var intervalId = window.setInterval(function () {
+            vaar()
+        }, 2000);
+
+
+        function vaar() {
+
+            if (document.getElementById('files').files[0] == null) {
+
+            } else {
+                var item = document.getElementById('files').files[0];
+                clearInterval(intervalId)
+                var resize_width = 1920; //without px
+
+                //create a FileReader
+                var reader = new FileReader();
+
+                //image turned to base64-encoded Data URI.
+                reader.readAsDataURL(item);
+                reader.name = item.name; //get the image's name
+                reader.size = item.size; //get the image's size
+                reader.onload = function (event) {
+                    var img = new Image(); //create a image
+                    img.src = event.target.result; //result is base64-encoded Data URI
+                    img.name = event.target.name; //set name (optional)
+                    img.size = event.target.size; //set size (optional)
+                    img.onload = function (el) {
+                        var elem = document.createElement('canvas'); //create a canvas
+
+                        //scale the image to 600 (width) and keep aspect ratio
+                        var scaleFactor = resize_width / el.target.width;
+                        elem.width = resize_width;
+                        elem.height = el.target.height * scaleFactor;
+
+                        //draw in canvas
+                        var ctx = elem.getContext('2d');
+                        ctx.drawImage(el.target, 0, 0, elem.width, elem.height);
+
+                        //get the base64-encoded Data URI from the resize image
+                        var srcEncoded = ctx.canvas.toDataURL('image/jpg', 1);
+                        takepicture(srcEncoded);
+                        //assign it to thumb src
+                        /*Now you can send "srcEncoded" to the server and
+                        convert it to a png o jpg. Also can send
+                        "el.target.name" that is the file's name.*/
+
+                    }
+                }
+            }
+        }
+
+        function takepicture(i) {
+            var data = i;
+            $.post("/takeimage", {
+                    name: data
+                },
+                function (data, status) {
+                    console.log("Front NIC" + "\nStatus: " + status)
+                });
+        }
+    </script>
+
+
+    <script>
+        function check1() {
+
+            $("input[id='pro']").click();
+        }
+
+        var intervalId1 = window.setInterval(function () {
+            vaar1()
+        }, 2000);
+
+        function getBase641(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function vaar1() {
+
+            if (document.getElementById('pro').files[0] == null) {
+
+            } else {
+                var item = document.getElementById('pro').files[0];
+                clearInterval(intervalId1)
+
+                var img = new Image();
+
+                img.src = window.URL.createObjectURL(item);
+                var resize_width = 1280; //without px
+
+                img.onload = function () {
+                    var width = img.naturalWidth,
+                        height = img.naturalHeight;
+                    if(width>height){
+                        resize_width = 1920;
+                        console.log("landscape");
+                    }else{
+                        resize_width = 1080;
+                        console.log("portrait");
+                    }
+                }
+
+
+
+                //create a FileReader
+                var reader = new FileReader();
+
+                //image turned to base64-encoded Data URI.
+                reader.readAsDataURL(item);
+                reader.name = item.name; //get the image's name
+                reader.size = item.size; //get the image's size
+
+
+
+
+
+                reader.onload = function (event) {
+                    var img = new Image(); //create a image
+                    img.src = event.target.result; //result is base64-encoded Data URI
+                    img.name = event.target.name; //set name (optional)
+                    img.size = event.target.size; //set size (optional)
+                    img.onload = function (el) {
+                        var elem = document.createElement('canvas'); //create a canvas
+
+                        //scale the image to 600 (width) and keep aspect ratio
+                        var scaleFactor = resize_width / el.target.width;
+                        elem.width = resize_width;
+                        elem.height = el.target.height * scaleFactor;
+
+                        //draw in canvas
+                        var ctx = elem.getContext('2d');
+                        ctx.drawImage(el.target, 0, 0, elem.width, elem.height);
+
+                        //get the base64-encoded Data URI from the resize image
+                        var srcEncoded = ctx.canvas.toDataURL('image/jpg', 1);
+                        takepicture1(srcEncoded);
+                        //assign it to thumb src
+                        /*Now you can send "srcEncoded" to the server and
+                        convert it to a png o jpg. Also can send
+                        "el.target.name" that is the file's name.*/
+
+                    }
+                }
+            }
+        }
+
+        function takepicture1(i) {
+            var data = i;
+            $.post("/propic", {
+                    name: data
+                },
+                function (data, status) {
+                    console.log("Profile Picture" + "\nStatus: " + status)
+                });
+        }
+    </script>
+    <script>
+        function check2() {
+
+            $("input[id='bfiles']").click();
+        }
+
+        var intervalId2 = window.setInterval(function () {
+            vaar2()
+        }, 2000);
+
+        function getBase642(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function vaar2() {
+
+            if (document.getElementById('bfiles').files[0] == null) {
+
+            } else {
+                var item = document.getElementById('bfiles').files[0];
+                clearInterval(intervalId2)
+                var resize_width = 1920; //without px
+
+                //create a FileReader
+                var reader = new FileReader();
+
+                //image turned to base64-encoded Data URI.
+                reader.readAsDataURL(item);
+                reader.name = item.name; //get the image's name
+                reader.size = item.size; //get the image's size
+                reader.onload = function (event) {
+                    var img = new Image(); //create a image
+                    img.src = event.target.result; //result is base64-encoded Data URI
+                    img.name = event.target.name; //set name (optional)
+                    img.size = event.target.size; //set size (optional)
+                    img.onload = function (el) {
+                        var elem = document.createElement('canvas'); //create a canvas
+
+                        //scale the image to 600 (width) and keep aspect ratio
+                        var scaleFactor = resize_width / el.target.width;
+                        elem.width = resize_width;
+                        elem.height = el.target.height * scaleFactor;
+
+                        //draw in canvas
+                        var ctx = elem.getContext('2d');
+                        ctx.drawImage(el.target, 0, 0, elem.width, elem.height);
+
+                        //get the base64-encoded Data URI from the resize image
+                        var srcEncoded = ctx.canvas.toDataURL('image/jpg', 1);
+                        takepicture2(srcEncoded);
+                        //assign it to thumb src
+                        /*Now you can send "srcEncoded" to the server and
+                        convert it to a png o jpg. Also can send
+                        "el.target.name" that is the file's name.*/
+
+                    }
+                }
+            }
+        }
+
+        function takepicture2(i) {
+            var data = i;
+            $.post("/bnic", {
+                    name: data
+                },
+                function (data, status) {
+                    console.log("Back NIC" + "\nStatus: " + status)
+                });
+        }
+        var intervalId4 = window.setInterval(function () {
+            sub()
+        }, 2000);
+
+        function sub() {
+
+            if (document.getElementById('bfiles').files[0] != null && document.getElementById('files').files[0] !=
+                null) {
+                document.getElementById("load").style.visibility = "visible";
+                setInterval(myTimer, 10000);
+
+                function myTimer() {
+                    window.location.replace("{{ url_for('photo') }}");
+                }
+                clearInterval(intervalId4)
+            }
+        }
+    </script>
+</body>
+
+</html>

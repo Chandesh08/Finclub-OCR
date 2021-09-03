@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <script type="text/javascript" src="https://unpkg.com/webcam-easy/dist/webcam-easy.min.js"></script>
+  </head> 
+  <body>
+    <video id="webcam" autoplay playsinline width="640" height="480"></video>
+<canvas id="canvas" class="d-none"></canvas>
+<audio id="snapSound" src="audio/snap.wav" preload = "auto"></audio>
+
+    <script>
+
+navigator.mediaDevices.enumerateDevices()
+  .then(getVideoInputs)
+  .catch(errorCallback);
+ 
+function getVideoInputs(mediaDevices){
+      mediaDevices.forEach(mediaDevice => {
+        if (mediaDevice.kind === 'videoinput') {
+          this._webcamList.push(mediaDevice);
+        }
+      });
+}
+
+navigator.mediaDevices.getUserMedia(this.getMediaConstraints())
+  .then(stream => {
+      this._webcamElement.srcObject = stream;
+      this._webcamElement.play();
+  })
+  .catch(error => {
+     //...
+  });
+
+  if(this._facingMode == 'user'){
+    this._webcamElement.style.transform = "scale(-1,1)";
+}
+
+    </script>
+
+  </body>
+</html>

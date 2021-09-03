@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Hello, world!</title>
+    <style>
+        .nav-link {
+            font-size: 18px;
+            color: black;
+            font-weight: 3000;
+        }
+
+        .login {
+            color: orangered;
+        }
+
+        .register {
+            color: orangered;
+        }
+
+        .img {
+            width: 50%;
+        }
+
+        .center {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <nav class="navbar navbar-expand-md navbar-light">
+        <a class="navbar-brand" href="#">
+            <img src="../static/finclub.jpg" alt="logo">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Borrow</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Lend</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>Live loan</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><b>How it works</b></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link login" href="#" style="color: orangered;"><b>Login</b></a>
+                </li>
+
+                <!-- Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle register" style="color: orangered;" href="#" id="navbardrop"
+                        data-toggle="dropdown">
+                        <b>Register</b>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#"><b>Borrower</b></a>
+                        <a class="dropdown-item" href="#"><b>Lender</b></a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <br>
+
+    <div class="container-fluid">
+        <input id="files" class="center" type="file" accept="image/*" capture="environment" style="display: none;" />
+        <h2 class="center">OCR Testing</h2>
+        <br />
+        <div class="row">
+            <div class="col-sm-5">
+                <h5 class="center">ID Card</h5>
+                <a onclick="check()" class="d-flex justify-content-center"><img src="../static/id-card.png" alt="logo"
+                        class="img"></a>
+            </div>
+            <div class="col-sm-2"></div>
+            <div class="col-sm-5">
+                <h5 class="center">Passport</h5>
+                <span class="d-flex justify-content-center">
+                    <img src="../static/passport.png" alt="logo" class="img">
+                </span>
+            </div>
+        </div>
+    </div>
+<br/>
+<br/>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+    <script>
+        function check() {
+            window.location.replace("{{ url_for('choose') }}");
+            //$("input[id='files']").click();
+        }
+
+        var intervalId = window.setInterval(function () {
+            vaar()
+        }, 2000);
+
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function vaar() {
+
+            if (document.getElementById('files').files[0] == null) {
+
+            } else {
+                var file = document.getElementById('files').files[0];
+                clearInterval(intervalId) 
+                getBase64(file).then(
+                    data => takepicture(data)
+                );
+            }
+        }
+
+        function takepicture(i) {
+            var data = i;
+            $.post("/takeimage", {
+                    name: data
+                },
+                function (data, status) {
+                    alert("Snapshot Taken" + "\nStatus: " + status);
+                    $("#loader").css("display", "initial");
+                    setInterval(myTimer, 3000);
+
+                    function myTimer() {
+                        window.location.replace("{{ url_for('photo') }}");
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
