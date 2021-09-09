@@ -10,14 +10,18 @@ from pytesseract import pytesseract
 from imutils.perspective import four_point_transform
 from datetime import datetime
 import os
+from deskew import determine_skew
+import math
+from typing import Tuple, Union
+import face_recognition
 
 pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 startTime = datetime.now()
 
 
-def ocr(i,j,o):
+def ocr(i, j):
 
-    def image_resize(image, width = None, height = None, inter = cv2.INTER_AREA):
+    def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
         # initialize the dimensions of the image to be resized and
         # grab the image size
         dim = None
@@ -41,23 +45,21 @@ def ocr(i,j,o):
             # dimensions
             r = width / float(w)
             dim = (width, int(h * r))
-
         # resize the image
-        resized = cv2.resize(image, dim, interpolation = inter)
-
+        resized = cv2.resize(image, dim, interpolation=inter)
         # return the resized image
         return resized
 
     image = cv2.imread(i)
     x, y, z = image.shape
     print(str(x) + '-' + str(y))
-    
+
     if x > y:
         print("portrait")
-        image = image_resize(image, height = 1920)
+        image = image_resize(image, height=1920)
     else:
         print('lanscaspe')
-        image = image_resize(image, height = 1080)
+        image = image_resize(image, height=1080)
 
     original_image = image.copy()
 
@@ -65,23 +67,43 @@ def ocr(i,j,o):
     print(str(x) + '-' + str(y))
     # convert the image to grayscale, blur it, and find edges in the image
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    def rotate(
+        image: np.ndarray, angle: float, background: Union[int, Tuple[int, int, int]]
+    ) -> np.ndarray:
+        old_width, old_height = image.shape[:2]
+        angle_radian = math.radians(angle)
+        width = abs(np.sin(angle_radian) * old_height) + \
+            abs(np.cos(angle_radian) * old_width)
+        height = abs(np.sin(angle_radian) * old_width) + \
+            abs(np.cos(angle_radian) * old_height)
+
+        image_center = tuple(np.array(image.shape[1::-1]) / 2)
+        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+        rot_mat[1, 2] += (width - old_width) / 2
+        rot_mat[0, 2] += (height - old_height) / 2
+        print("1234gwaba")
+        return cv2.warpAffine(image, rot_mat, (int(round(height)), int(round(width))), borderValue=background)
+
+    angle = determine_skew(gray)
+    print(angle)
+    rotated = rotate(gray, angle, (0, 0, 0))
+
     gray = cv2.bilateralFilter(gray, 11, 17, 17)
     edged = cv2.Canny(gray, 30, 200)
 
     def dilate(image):
-        kernel = np.ones((7, 7), np.uint8)
-        return cv2.dilate(image, kernel, iterations=3)
+        kernel = np.ones((5, 5), np.uint8)
+        return cv2.dilate(image, kernel, iterations=1)
 
     edged = dilate(edged)
-    
 
     #cv2.imshow('einfn', edged)
-    # cv2.waitKey(0)
 
     cnts = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
-    screen_cnt = 0
+    screen_cnt = None
 
     # loop over our contours
     for c in cnts:
@@ -94,9 +116,74 @@ def ocr(i,j,o):
             break
 
     # Draw ROI
-    cv2.drawContours(image, [screen_cnt], -1, (0, 120, 120), 5)
+    #cv2.drawContours(image, [screen_cnt], -1, (0, 120, 120), 5)
 
-    #gray = cv2.cvtColor(rotated, cv2.COLOR_BGR2GRAY)
+    x, y, w, h = cv2.boundingRect(screen_cnt)
+    aspect_ratio = float(h)/w
+    print(aspect_ratio)
+
+    def rotate_bound(image, angle):
+        # grab the dimensions of the image and then determine the
+        # center
+        (h, w) = image.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
+        # grab the rotation matrix (applying the negative of the
+        # angle to rotate clockwise), then grab the sine and cosine
+        # (i.e., the rotation components of the matrix)
+        M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+        # compute the new bounding dimensions of the image
+        nW = int((h * sin) + (w * cos))
+        nH = int((h * cos) + (w * sin))
+        # adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - cX
+        M[1, 2] += (nH / 2) - cY
+        # perform the actual rotation and return the image
+        return cv2.warpAffine(image, M, (nW, nH))
+
+    if aspect_ratio > 1:
+        image = rotate_bound(image, -90)
+
+    def is_image_upside_down(img):
+        face_locations = face_recognition.face_locations(img)
+        encodings = face_recognition.face_encodings(img, face_locations)
+        image_is_upside_down = (len(encodings) == 0)
+        return image_is_upside_down
+
+    if is_image_upside_down(image):
+        print("rotate to 180 degree")
+        image = rotate_bound(image, 180)
+    else:
+        print("image is straight")
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+    edged = cv2.Canny(gray, 30, 200)
+
+    def dilate(image):
+        kernel = np.ones((5, 5), np.uint8)
+        return cv2.dilate(image, kernel, iterations=1)
+
+    edged = dilate(edged)
+
+    #cv2.imshow('einfn', edged)
+
+    cnts = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
+    screen_cnt = None
+
+    # loop over our contours
+    for c in cnts:
+        # approximate the contour
+        peri = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.015 * peri, True)
+
+        if len(approx) == 4:
+            screen_cnt = approx
+            break
+
     gray = four_point_transform(image, screen_cnt.reshape(4, 2))
     gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
     dimensions = gray.shape
@@ -128,7 +215,7 @@ def ocr(i,j,o):
     #cv2.imshow("firstname", crop_image2)
 
     crop_image3 = th[453:520, 450:1500]
-    cv2.imshow("sab", crop_image3)
+    #cv2.imshow("sab", crop_image3)
 
     crop_image4 = th[580:650, 500:590]
     #cv2.imshow("gender", crop_image4)
@@ -141,7 +228,6 @@ def ocr(i,j,o):
 
     crop_image1 = th[855:935, 10:570]
     #cv2.imshow("nic", crop_image1)
-    cv2.waitKey(0)
 
     print("Execution Time: {}".format(datetime.now() - startTime))
     data = []
@@ -190,38 +276,62 @@ def ocr(i,j,o):
 
     data.append(text8[:-1])
     print('Gender: '+text8[:-1])
-    
-#-------------------------------------------------------------------------------------------------------------------
-    
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------
+
     image = cv2.imread(j)
-    x,y,z = image.shape
+    x, y, z = image.shape
     if x > y:
         print("portrait")
-        image = image_resize(image, height = 1920)
+        image = image_resize(image, height=1920)
     else:
         print('lanscaspe')
-        image = image_resize(image, height = 1080)
-        
+        image = image_resize(image, height=1080)
+
     original_image = image.copy()
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    
+    
+    
+    
+    def rotate(
+        image: np.ndarray, angle: float, background: Union[int, Tuple[int, int, int]]
+    ) -> np.ndarray:
+        old_width, old_height = image.shape[:2]
+        angle_radian = math.radians(angle)
+        width = abs(np.sin(angle_radian) * old_height) + \
+            abs(np.cos(angle_radian) * old_width)
+        height = abs(np.sin(angle_radian) * old_width) + \
+            abs(np.cos(angle_radian) * old_height)
+
+        image_center = tuple(np.array(image.shape[1::-1]) / 2)
+        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+        rot_mat[1, 2] += (width - old_width) / 2
+        rot_mat[0, 2] += (height - old_height) / 2
+        print("1234gwaba")
+        return cv2.warpAffine(image, rot_mat, (int(round(height)), int(round(width))), borderValue=background)
+
+    angle = determine_skew(gray)
+    print(angle)
+    rotated = rotate(gray, angle, (0, 0, 0))
+
     gray = cv2.bilateralFilter(gray, 11, 17, 17)
     edged = cv2.Canny(gray, 30, 200)
 
     def dilate(image):
-        kernel = np.ones((7, 7), np.uint8)
-        return cv2.dilate(image, kernel, iterations=3)
+        kernel = np.ones((5, 5), np.uint8)
+        return cv2.dilate(image, kernel, iterations=1)
 
     edged = dilate(edged)
-    
 
     #cv2.imshow('einfn', edged)
-    # cv2.waitKey(0)
 
     cnts = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
     cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
-    screen_cnt = 0
+    screen_cnt = None
 
     # loop over our contours
     for c in cnts:
@@ -234,7 +344,76 @@ def ocr(i,j,o):
             break
 
     # Draw ROI
-    cv2.drawContours(image, [screen_cnt], -1, (0, 120, 120), 5)
+    #cv2.drawContours(image, [screen_cnt], -1, (0, 120, 120), 5)
+
+    x, y, w, h = cv2.boundingRect(screen_cnt)
+    aspect_ratio = float(h)/w
+    print(aspect_ratio)
+
+    def rotate_bound(image, angle):
+        # grab the dimensions of the image and then determine the
+        # center
+        (h, w) = image.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
+        # grab the rotation matrix (applying the negative of the
+        # angle to rotate clockwise), then grab the sine and cosine
+        # (i.e., the rotation components of the matrix)
+        M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+        # compute the new bounding dimensions of the image
+        nW = int((h * sin) + (w * cos))
+        nH = int((h * cos) + (w * sin))
+        # adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - cX
+        M[1, 2] += (nH / 2) - cY
+        # perform the actual rotation and return the image
+        return cv2.warpAffine(image, M, (nW, nH))
+
+    if aspect_ratio > 1:
+        image = rotate_bound(image, -90)
+
+    def is_image_upside_down(img):
+        face_locations = face_recognition.face_locations(img)
+        encodings = face_recognition.face_encodings(img, face_locations)
+        image_is_upside_down = (len(encodings) == 0)
+        return image_is_upside_down
+
+    
+    
+    
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.bilateralFilter(gray, 11, 17, 17)
+    edged = cv2.Canny(gray, 30, 200)
+
+    def dilate(image):
+        kernel = np.ones((5, 5), np.uint8)
+        return cv2.dilate(image, kernel, iterations=1)
+
+    edged = dilate(edged)
+
+    #cv2.imshow('einfn', edged)
+
+    cnts = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
+    screen_cnt = None
+
+    # loop over our contours
+    for c in cnts:
+        # approximate the contour
+        peri = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.015 * peri, True)
+
+        if len(approx) == 4:
+            screen_cnt = approx
+            break
+    
+    
+    
+    
+    
 
     #gray = cv2.cvtColor(rotated, cv2.COLOR_BGR2GRAY)
     gray = four_point_transform(image, screen_cnt.reshape(4, 2))
@@ -247,6 +426,7 @@ def ocr(i,j,o):
     print(dimensions)
 
     #cv2.imshow("transformedaaa", gray)
+    # cv2.waitKey(0)
 
     # Remove shadows
     dilated_img = cv2.dilate(gray, np.ones((5, 5), np.uint8))
@@ -260,12 +440,12 @@ def ocr(i,j,o):
 
     crop_image = th[670:770, 1100:1450]
     #cv2.imshow("cropped", crop_image)
-
+    #cv2.waitKey(0)
     niccode = pytesseract.image_to_string(crop_image, config=("-c tessedit"
-                    "_char_whitelist=0123456789"
-                    " --psm 7"
-                    " 2 osd"
-                    " "))
+                                                              "_char_whitelist=0123456789"
+                                                              " --psm 7"
+                                                              " 2 osd"
+                                                              " "))
     print(niccode[:-1])
 
     barcodes = pyzbar.decode(image)
@@ -283,7 +463,7 @@ def ocr(i,j,o):
         # draw the barcode data and barcode type on the image
         text = "{} ({})".format(barcodeData, barcodeType)
         cv2.putText(image, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX,
-            0.5, (0, 0, 255), 2)
+                    0.5, (0, 0, 255), 2)
         # print the barcode type and data to the terminal
         print("[INFO] Found {} barcode: {}".format(barcodeType, barcodeData))
         return '''
@@ -299,8 +479,27 @@ def ocr(i,j,o):
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <title>Hello, world!</title>
+    <link rel="icon" href="../static/icon.png">
+    <title>NIC OCR</title>
     <style>
+   body {
+            background-image: url(../static/background.jpg);
+            background-size: cover;
+        }
+        input[type=text] {
+  width: 100%;
+  font-weight: 1000;
+            background-color: transparent;
+  padding: 8px 12px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: none;
+  border-bottom: 2px solid orangered;
+}
+label{
+    color: blue;
+    font-weight: 1000;
+}
         .nav-link {
             font-size: 18px;
             color: black;
@@ -317,6 +516,7 @@ def ocr(i,j,o):
 
         .img {
             width: 50%;
+            border-radius: 200%;
         }
 
         .center {
@@ -330,7 +530,7 @@ def ocr(i,j,o):
 
     <nav class="navbar navbar-expand-md navbar-light">
         <a class="navbar-brand" href="#">
-            <img src="../static/finclub.jpg" alt="logo">
+            <img src="../static/finclub.png" alt="logo">
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
             <span class="navbar-toggler-icon"></span>
@@ -373,46 +573,43 @@ def ocr(i,j,o):
     
      <div class="col-md-12">
      <div class="row">
-     <div class="col-md-6">
+     <div class="container-fluid d-flex justify-content-center">
       <img src="static/''' + filename + '''" alt="logo" class="img rounded-circle">
-    </div>
-    <div class="col-md-6">
-      <img src="''' + o + '''" alt="logo" class="img rounded-circle">
     </div>
     </div>
     </div>
     <div class="col-md-12">
       <div class="form-group">
         <label for="usr">NIC:</label>
-        <input type="text" class="form-control" id="usr" name="username" value="''' + text1 + '''">
+        <input type="text" class="form-control" id="nic" name="username" value="''' + text1 + '''">
       </div>
       <div class="form-group">
         <label for="usr">NIC Barcode:</label>
-        <input type="text" class="form-control" id="usr" name="username" value="''' + barcodeData + '''">
+        <input type="text" class="form-control" id="nicb" name="username" value="''' + barcodeData + '''">
       </div>
       <div class="form-group">
         <label for="usr">Back NIC Code:</label>
-        <input type="text" class="form-control" id="usr" name="username" value="''' + niccode + '''">
+        <input type="text" class="form-control" id="bnicc" name="username" value="''' + niccode + '''">
       </div>
       <div class="form-group">
         <label for="pwd">First Name:</label>
-        <input type="text" class="form-control" id="pwd" value="''' + text3 + '''">
+        <input type="text" class="form-control" id="fn" value="''' + text3 + '''">
       </div>
       <div class="form-group">
         <label for="pwd">Surname:</label>
-        <input type="text" class="form-control" id="pwd1" value="''' + text2 + '''">
+        <input type="text" class="form-control" id="sn" value="''' + text2 + '''">
       </div>
       <div class="form-group">
         <label for="pwd">Surname at birth:</label>
-        <input type="text" class="form-control" id="pwd2" value="''' + text4 + '''">
+        <input type="text" class="form-control" id="sab" value="''' + text4 + '''">
       </div>
       <div class="form-group">
         <label for="pwd">Date of birth:</label>
-        <input type="text" class="form-control" id="pwd3" value="''' + text7 + '''">
+        <input type="text" class="form-control" id="dob" value="''' + text7 + '''">
       </div>
       <div class="form-group">
         <label for="pwd">Gender:</label>
-        <input type="text" class="form-control" id="pwd4" value="''' + text8 + '''">
+        <input type="text" class="form-control" id="gen" value="''' + text8 + '''">
       </div>
     </div>
 
@@ -425,11 +622,19 @@ def ocr(i,j,o):
     </script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
     </script>
+    <script>
+    var nic = document.getElementById("nic").value;
+    var nicb = document.getElementById("nicb").value;
+    if(nic == nicb){
+        //alert("ID Number does match!");
+    }else{
+        //alert("ID Number does not match!");
+    }
+    </script>
 </body>
 
 </html>
 '''
-
 
 
 def id_generator(size=14, chars=string.ascii_uppercase + string.digits):
@@ -456,9 +661,14 @@ def choose():
     return render_template('choose.html')
 
 
+@app.route('/error')
+def error():
+    return render_template('400.html')
+
+
 @app.route('/takeimage', methods=['POST'])
 def takeimage():
-    name = request.form['name']
+    name = request.form['front']
     img = data_uri_to_cv2_img(name)
     global di
     di = id_generator()
@@ -468,7 +678,7 @@ def takeimage():
 
 @app.route('/propic', methods=['POST'])
 def propic():
-    name = request.form['name']
+    name = request.form['front']
     img = data_uri_to_cv2_img(name)
     global di1
     di1 = id_generator()
@@ -478,7 +688,7 @@ def propic():
 
 @app.route('/bnic', methods=['POST'])
 def bnic():
-    name = request.form['name']
+    name = request.form['back']
     img = data_uri_to_cv2_img(name)
     global di2
     di2 = id_generator()
@@ -490,9 +700,8 @@ def bnic():
 def photo():
     img11 = 'static/FrontNIC' + di + '.jpg'
     img22 = 'static/BackNIC' + di2 + '.jpg'
-    img33 = 'static/profilepic' + di1 + '.jpg'
     #x = barcode(img22)
-    y = ocr(img11,img22,img33)
+    y = ocr(img11, img22)
     return y
 
 
