@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>FinClub OCR</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+    @font-face {
+        font-family: 'Red Hat Display';
+        src: url('../static/font/RedHatDisplay.woff2') format('woff2');
+    }
+
+    @font-face {
+        font-family: 'Mulish';
+        src: url('../static/font/Mulish.woff2') format('woff2');
+    }
+
+    .Headline-6 {
+        text-align: center;
+        font-family: 'Red Hat Display';
+        font-size: 17px;
+        font-weight: bolder;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: 0.25px;
+        color: #1c1c9b;
+    }
+
+    .Headline-1 {
+        text-align: center;
+        font-family: 'Red Hat Display';
+        font-size: 22px;
+        font-weight: bolder;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: 0.25px;
+        color: #1c1c9b;
+    }
+
+    .form-control {
+        font-family: 'Red Hat Display';
+        height: 38px;
+        border-radius: 4px;
+        background-color: #fff;
+    }
+
+    .col-sm-12 {
+        padding-bottom: 15px;
+        font-family: 'Red Hat Display';
+    }
+
+    .head {
+        height: auto;
+        width: 100%;
+        background-color: #f6f7fd;
+    }
+
+    .label {
+        width: 100%;
+        font-family: 'Red Hat Display';
+        font-size: 17px;
+        font-weight: bolder;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: 0.25px;
+        color: #1c1c9b;
+    }
+
+    .I-have-read-underst {
+        font-family: 'Mulish';
+        font-size: 12px;
+        font-weight: normal;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: 1;
+        letter-spacing: normal;
+        color: #677279;
+        padding-left: 10px;
+    }
+
+    .I-have-read-underst .text-style-1 {
+        font-weight: bold;
+    }
+
+    .sbt {
+        width: 100%;
+        background-color: #1c1c9b;
+        color: white;
+    }
+
+    .checkbox {
+        width: 16px;
+        height: 16px;
+        border-radius: 2px;
+        box-shadow: inset 0 1px 1px 0 rgba(0, 0, 0, 0.1);
+        border: solid 1px #ccc;
+        background-color: #fff;
+    }
+
+    /* The container */
+    .container {
+        display: block;
+        position: relative;
+        padding-left: 35px;
+        cursor: pointer;
+        font-family: 'Mulish';
+        font-size: 16px;
+        color: #677279;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    /* Hide the browser's default radio button */
+    .container input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* Create a custom radio button */
+    .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 25px;
+        width: 25px;
+        background-color: #eee;
+        border-radius: 50%;
+    }
+
+
+    /* On mouse-over, add a grey background color */
+    .container:hover input~.checkmark {
+        background-color: #ccc;
+    }
+
+    /* When the radio button is checked, add a blue background */
+    .container input:checked~.checkmark {
+        background-color: #fc4e13;
+    }
+
+    /* Create the indicator (the dot/circle - hidden when not checked) */
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+    }
+
+    /* Show the indicator (dot/circle) when checked */
+    .container input:checked~.checkmark:after {
+        display: block;
+    }
+
+    /* Style the indicator (dot/circle) */
+    .container .checkmark:after {
+        top: 3px;
+        left: 3px;
+        width: 19px;
+        height: 19px;
+        border-radius: 50%;
+        background: #fc4e13;
+        border: 3px solid white;
+    }
+
+    .stp-base {
+        width: 33.3%;
+        height: 40px;
+        padding-top: 10px;
+    }
+
+    .Oval {
+        width: 24px;
+        height: 24px;
+        margin: auto;
+        border-radius: 50%;
+        background-color: #fc4e13;
+    }
+
+    .Enter-Personal-Detai {
+        font-family: 'Red Hat Display';
+        font-size: 12px;
+        font-weight: bold;
+        font-stretch: normal;
+        font-style: normal;
+        line-height: normal;
+        letter-spacing: 0.15px;
+        color: #1c1c9b;
+        padding-top: 10px;
+    }
+
+    .span {
+        padding-top: 2px;
+        font-family: Roboto;
+        font-size: 12px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .Rectangle {
+        position: absolute;
+        width: 20%;
+        height: 1px;
+        margin: 23px 40px 67px 21%;
+        background-color: #d8d8d8;
+    }
+
+    .Rectangle1 {
+        position: absolute;
+        width: 20%;
+        height: 1px;
+        margin: 23px 40px 67px 51%;
+        background-color: #d8d8d8;
+    }
+
+    .imgcon {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+    }
+    .check{
+        text-align: center;
+    }
+
+</style>
+
+<body>
+
+
+
+
+    <div>
+        <nav class="navbar navbar-expand-md navbar-light">
+            <a class="navbar-brand" href="#">
+                <img src="../static/img/fin-club-logo-colour.svg" class="FinClub-Logo-Colour">
+            </a>
+
+        </nav>
+        <div class="head">
+            <div class="col-sm-12" style="text-align: center; padding-top: 15px;">
+                <p class="Headline-1">
+                    Smart Onboarding
+                </p>
+                <table style="width: 100%; margin-bottom: 1px;">
+                    <tr>
+                        <td class="stp-base">
+                            <div class="Oval" style="background-color: blue;">
+                                <p class="span">
+                                    1
+                                </p>
+                            </div>
+                            <p class="Enter-Personal-Detai">
+                                Scan
+                            </p>
+                        </td>
+                        <div class="Rectangle"></div>
+                        <td class="stp-base">
+                            <div class="Oval" style="background-color: blue;">
+                                <p class="span">
+                                    2
+                                </p>
+                            </div>
+                            <p class="Enter-Personal-Detai">
+                                Check
+                            </p>
+                        </td>
+                        <div class="Rectangle1"></div>
+                        <td class="stp-base">
+                            <div class="Oval" style="background-color: #fc4e13;">
+                                <p class="span">
+                                    3
+                                </p>
+                            </div>
+                            <p class="Enter-Personal-Detai">
+                                Submit
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <br />
+        <div class="col-sm-12">
+            <div class="row">
+                <div class="col-sm-12 check">
+                    <img src="../static/img/check-mark-confirmation.svg" class="imgcon" style='width: 60%;' />
+                    <br/>
+                    <p class="Headline-1">You have successfully registered.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">
+    </script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">
+    </script>
+
+</body>
+
+</html>
